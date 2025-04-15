@@ -1,7 +1,15 @@
 import spacy
+import os
 
-# Carrega o modelo português grande
-nlp = spacy.load("pt_core_news_lg")
+def carregar_modelo():
+    try:
+        return spacy.load("pt_core_news_lg")
+    except OSError:
+        from spacy.cli import download
+        download("pt_core_news_lg")
+        return spacy.load("pt_core_news_lg")
+
+nlp = carregar_modelo()
 
 def extrair_entidades(texto):
     doc = nlp(texto)
