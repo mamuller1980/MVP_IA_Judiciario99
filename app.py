@@ -1,35 +1,30 @@
 import streamlit as st
 import fitz  # PyMuPDF
-from backend import processamento
+from nlp_spacy import extrair_entidades
 
-st.set_page_config(page_title="MVP IA Judiciário", layout="wide")
-st.title("MVP - Classificador Inteligente de Petições")
+st.set_page_config(page_title="IA para o Judiciário", layout="wide")
 
-uploaded_file = st.file_uploader("Envie uma petição (.pdf ou .txt)", type=["txt", "pdf"])
+st.title("💼 Análise de Petições com IA")
+st.markdown("Faça upload de uma petição em PDF para extrair e analisar entidades com NLP.")
+
+uploaded_file = st.file_uploader("📄 Envie uma petição (PDF)", type=["pdf"])
 
 def extrair_texto_pdf(file):
-    doc = fitz.open(stream=file.read(), filetype="pdf")
     texto = ""
-    for page in doc:
-        texto += page.get_text()
+    with fitz.open(stream=file.read(), filetype="pdf") as doc:
+        for page in doc:
+            texto += page.get_text()
     return texto
 
 if uploaded_file:
-    if uploaded_file.name.endswith(".pdf"):
-        text = extrair_texto_pdf(uploaded_file)
-    else:
-        text = uploaded_file.read().decode("utf-8")
-    
-    st.subheader("Texto da Petição")
-    st.text_area("Conteúdo", text, height=300)
-    
-    st.subheader("Classificação com IA")
-    resultado = processamento.classificar_peticao(text)
-    st.markdown(f"**Tipo de Ação:** {resultado['tipo_acao']}")
-    st.markdown(f"**Urgência:** {resultado['urgencia']}")
-    st.markdown(f"**Resumo:** {resultado['resumo']}")
-    
-    st.subheader("Minuta Automática Sugerida")
-    st.code(resultado['minuta'], language="markdown")
+    texto = extrair_texto_pdf(uploaded_file)
+    st.subheader("📝 Texto da Petição")
+    st.write(texto[:2000] + "..." if len(texto) > 2000 else texto)
 
-    st.success("Classificação simulada concluída.")
+    entidades = extrair_entidades(texto)
+    st.subheader("🔎 Entidades Reconhecidas com spaCy")
+    if entidades:
+        for entidade, label in entidades:
+            st.markdown(f"- **{label}**: {entidade}")
+    else:
+        st.info("Nenhuma entidade encontrada no texto.")
